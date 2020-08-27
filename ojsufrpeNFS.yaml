@@ -10,6 +10,7 @@ spec:
   selector:
     app: ojs
   type: NodePort
+
 ---
 
 apiVersion: v1
@@ -25,7 +26,9 @@ spec:
   resources:
     requests:
       storage: 2Gi
+
 ---
+
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -41,6 +44,7 @@ spec:
   nfs:
     path: /mnt/hd2/ojs
     server: 172.16.64.238
+
 ---
 
 apiVersion: apps/v1
@@ -89,6 +93,7 @@ spec:
 status: {}
 
 ---
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -114,7 +119,7 @@ spec:
             protocol: TCP
           volumeMounts:
             - name: ojs-persistent-storage
-            mountPath: /var/www/html
+              mountPath: /var/www/html
       volumes:
         - name: ojs-persistent-storage
         persistentVolumeClaim:
