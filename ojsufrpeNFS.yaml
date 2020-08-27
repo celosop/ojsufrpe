@@ -122,5 +122,5 @@ spec:
               mountPath: /var/www/html
       volumes:
         - name: ojs-persistent-storage
-        persistentVolumeClaim:
-          claimName: ojs-pv-claim
+          persistentVolumeClaim:
+            claimName: ojs-pv-claim
