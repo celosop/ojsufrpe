@@ -1,0 +1,121 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ojs-service
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    nodePort: 31234
+  selector:
+    app: ojs
+  type: NodePort
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ojs-pv-claim
+  labels:
+    app: ojs
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: ojs-pv-volume
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  nfs:
+    path: /mnt/hd2/ojs
+    server: 172.16.64.238
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.21.0 (992df58d8)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: db
+  name: db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: db
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.21.0 (992df58d8)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/inside: "true"
+        io.kompose.service: db
+    spec:
+      containers:
+      - env:
+        - name: MYSQL_DATABASE
+          value: ojs
+        - name: MYSQL_PASSWORD
+          value: ojsPwd
+        - name: MYSQL_ROOT_PASSWORD
+          value: ojsPwd
+        - name: MYSQL_USER
+          value: ojs
+        image: mariadb:10.2
+        imagePullPolicy: ""
+        name: ojs-db
+        resources: {}
+      restartPolicy: Always
+      serviceAccountName: ""
+      volumes: null
+status: {}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ojs
+  labels:
+    app: ojs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ojs
+  template:
+    metadata:
+      labels:
+        app: ojs
+    spec:
+      containers:
+        - name: ojs
+          image: celosop/ojsufrpe:3
+          ports:
+          - containerPort: 8080
+            name: http
+            protocol: TCP
+          volumeMounts:
+            - name: ojs-persistent-storage
+            mountPath: /var/www/html
+      volumes:
+        - name: ojs-persistent-storage
+        persistentVolumeClaim:
+          claimName: ojs-pv-claim
